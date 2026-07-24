@@ -428,20 +428,31 @@
 
     // الربط بـ Google Sheet (استبدل الرابط برابط التطبيق الخاص بك)
 function sendToGoogleSheet(data) {
-    // ضع رابط الـ Web App الخاص بك هنا
-    const baseUrl = 'https://script.google.com/macros/s/AKfycbyDMTEZ7YZCVEbLRIQCplWpnVUrGR4EattAHlXcclFQsA0sqlURZdGvoUa5_W63FFjW/exec';
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbyDMTEZ7YZCVEbLRIQCplWpnVUrGR4EattAHlXcclFQsA0sqlURZdGvoUa5_W63FFjW/exec';
 
-    // تحويل الكائن إلى Query String
-    const queryParams = new URLSearchParams(data).toString();
-    const fullUrl = `${baseUrl}?${queryParams}`;
+    // إنشاء نموذج خفي وإرساله
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = webAppUrl;
+    form.target = 'hidden_iframe'; // للإرسال في الخلفية بدون إنعاش الصفحة
 
-    // إرسال الطلب عبر Image Beacon لتفادي حظر CORS تماماً
-    const img = new Image();
-    img.src = fullUrl;
-    
-    console.log('جاري إرسال البيانات إلى Google Sheet...');
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = key;
+            hiddenField.value = data[key];
+            form.appendChild(hiddenField);
+        }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
+    
 </script>
-
+<!-- إطار خفي يستقبل استجابة جوجل بدون تحويل الصفحة -->
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 </body>
 </html>
