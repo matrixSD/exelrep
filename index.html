@@ -83,12 +83,6 @@
             font-weight: bold;
         }
 
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
         input[type="text"], input[type="number"] {
             width: 100%;
             padding: 10px;
@@ -172,7 +166,6 @@
             padding: 8px;
         }
 
-        /* Custom Excel Headers matching Image */
         th.header-bankak { background-color: var(--header-blue); color: white; }
         th.header-cashi { background-color: var(--header-blue); color: white; }
         th.header-expenses { background-color: var(--header-red); color: white; }
@@ -238,7 +231,7 @@
         </div>
     </div>
 
-    <!-- الجدول الجاهز لعرض البيانات بنفس تنسيق الصورة -->
+    <!-- الجدول -->
     <div class="table-container">
         <table>
             <thead>
@@ -254,18 +247,19 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- الصفوف الديناميكية ستظهر هنا -->
             </tbody>
         </table>
     </div>
 
 </div>
 
+<!-- إطار خفي يستقبل الاستجابة بسلام دون تحديث الصفحة -->
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
 <script>
     let currentCategory = 'bankak';
     let rowsData = JSON.parse(localStorage.getItem('excelRowsData')) || [];
 
-    // إعدادات البداية
     window.onload = function() {
         renderTable();
         setupInputEvents();
@@ -282,7 +276,7 @@
         if (cat === 'expenses') {
             secondLabel.innerText = 'ملاحظات';
             secondInput.placeholder = 'أدخل الملاحظة...';
-            secondInput.required = false; // الملاحظات اختيارية
+            secondInput.required = false;
         } else {
             secondLabel.innerText = 'رقم العملية';
             secondInput.placeholder = 'أدخل رقم العملية...';
@@ -294,18 +288,15 @@
     function appendUnit(unit) {
         const input = document.getElementById('amountInput');
         let val = input.value.trim().toLowerCase();
-        val = val.replace(/k|m/g, ''); // تنظيف الاختصارات السابقة
+        val = val.replace(/k|m/g, '');
         if (val !== '') {
             input.value = val + unit;
         }
-        // الانتقال للحقل التالي تلقائياً
         document.getElementById('secondInput').focus();
     }
 
     function setupInputEvents() {
         const amountInput = document.getElementById('amountInput');
-        
-        // عند الضغط على Enter في خانة المبلغ، يتنقل لخانة رقم العملية/الملاحظات
         amountInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -324,7 +315,6 @@
 
         if (!amount) return;
 
-        // تجهيز كائن البيانات للصف الجديد
         let newRow = {
             bankakAmount: '',
             bankakOp: '',
@@ -339,7 +329,7 @@
         if (currentCategory === 'bankak') {
             newRow.bankakAmount = amount;
             newRow.bankakOp = secondVal;
-            newRow.bankakChecked = true; // محدد افتراضياً
+            newRow.bankakChecked = true;
         } else if (currentCategory === 'cashi') {
             newRow.cashiAmount = amount;
             newRow.cashiOp = secondVal;
@@ -352,10 +342,9 @@
         rowsData.push(newRow);
         saveAndRefresh();
 
-        // إرسال البيانات للـ Google Sheet أونلاين
+        // إرسال البيانات للـ Google Sheet
         sendToGoogleSheet(newRow);
 
-        // إعادة ضبط المدخلات
         document.getElementById('transactionForm').reset();
         document.getElementById('amountInput').focus();
     }
@@ -409,7 +398,6 @@
             tbody.appendChild(tr);
         });
 
-        // تحديث الإحصائيات
         document.getElementById('statBankak').innerText = formatStatNumber(totalBankak);
         document.getElementById('statCashi').innerText = formatStatNumber(totalCashi);
         document.getElementById('statExpenses').innerText = formatStatNumber(totalExpenses);
@@ -426,33 +414,34 @@
         renderTable();
     }
 
-    // الربط بـ Google Sheet (استبدل الرابط برابط التطبيق الخاص بك)
-function sendToGoogleSheet(data) {
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbyDMTEZ7YZCVEbLRIQCplWpnVUrGR4EattAHlXcclFQsA0sqlURZdGvoUa5_W63FFjW/exec';
+    // دالة الإرسال المعدلة والمضمونة
+    function sendToGoogleSheet(data) {
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyDMTEZ7YZCVEbLRIQCplWpnVUrGR4EattAHlXcclFQsA0sqlURZdGvoUa5_W63FFjW/exec';
 
-    // إنشاء نموذج خفي وإرساله
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = webAppUrl;
-    form.target = 'hidden_iframe'; // للإرسال في الخلفية بدون إنعاش الصفحة
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = webAppUrl;
+        form.target = 'hidden_iframe';
 
-    for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-            const hiddenField = document.createElement('input');
-            hiddenField.type = 'hidden';
-            hiddenField.name = key;
-            hiddenField.value = data[key];
-            form.appendChild(hiddenField);
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = data[key];
+                form.appendChild(hiddenField);
+            }
         }
-    }
 
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-}
-    
+        document.body.appendChild(form);
+        form.submit();
+        
+        // إزالة الفيلد بعد ثانية لضمان نجاح الإرسال
+        setTimeout(() => {
+            document.body.removeChild(form);
+        }, 1000);
+    }
 </script>
-<!-- إطار خفي يستقبل استجابة جوجل بدون تحويل الصفحة -->
-<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
 </body>
 </html>
