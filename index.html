@@ -427,24 +427,24 @@
     }
 
     // الربط بـ Google Sheet (استبدل الرابط برابط التطبيق الخاص بك)
-  function sendToGoogleSheet(data) {
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbyDMTEZ7YZCVEbLRIQCplWpnVUrGR4EattAHlXcclFQsA0sqlURZdGvoUa5_W63FFjW/exec';
+function sendToGoogleSheet(data) {
+    const webAppUrl = 'ضع_رابط_التطبيق_هنا'; // استبدل برابط الـ Web App الخاص بك
 
-    // تحويل البيانات لـ FormData لضمان تجاوز حماية المتصفح CORS
-    const formData = new FormData();
+    const params = new URLSearchParams();
     for (const key in data) {
-        formData.append(key, data[key]);
+        params.append(key, data[key]);
     }
 
     fetch(webAppUrl, {
         method: 'POST',
-        body: formData,
-        mode: 'no-cors'
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params.toString()
     })
-    .then(() => {
-        console.log('تم الإرسال لـ Google Sheet بنجاح!');
-    })
-    .catch(err => console.error('خطأ الإرسال:', err));
+    .then(() => console.log('تم الإرسال للإكسل بنجاح!'))
+    .catch(err => console.error('خطأ في الإرسال:', err));
 }
 </script>
 
