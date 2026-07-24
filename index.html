@@ -428,23 +428,18 @@
 
     // الربط بـ Google Sheet (استبدل الرابط برابط التطبيق الخاص بك)
 function sendToGoogleSheet(data) {
-    const webAppUrl = 'ضع_رابط_التطبيق_هنا'; // استبدل برابط الـ Web App الخاص بك
+    // ضع رابط الـ Web App الخاص بك هنا
+    const baseUrl = 'https://script.google.com/macros/s/AKfycbyDMTEZ7YZCVEbLRIQCplWpnVUrGR4EattAHlXcclFQsA0sqlURZdGvoUa5_W63FFjW/exec';
 
-    const params = new URLSearchParams();
-    for (const key in data) {
-        params.append(key, data[key]);
-    }
+    // تحويل الكائن إلى Query String
+    const queryParams = new URLSearchParams(data).toString();
+    const fullUrl = `${baseUrl}?${queryParams}`;
 
-    fetch(webAppUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: params.toString()
-    })
-    .then(() => console.log('تم الإرسال للإكسل بنجاح!'))
-    .catch(err => console.error('خطأ في الإرسال:', err));
+    // إرسال الطلب عبر Image Beacon لتفادي حظر CORS تماماً
+    const img = new Image();
+    img.src = fullUrl;
+    
+    console.log('جاري إرسال البيانات إلى Google Sheet...');
 }
 </script>
 
