@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المعاملات المالية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --bankak-color: #1f7a36;
+            --cashi-color: #2b5797;
+            --expense-color: #b71c1c;
+            --header-blue: #366092;
+            --header-red: #c00000;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            padding: 15px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Tabs & Category Selection */
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ccc;
+            background: white;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active[data-cat="bankak"] { background: var(--bankak-color); color: white; border-color: var(--bankak-color); }
+        .tab-btn.active[data-cat="cashi"] { background: var(--cashi-color); color: white; border-color: var(--cashi-color); }
+        .tab-btn.active[data-cat="expenses"] { background: var(--expense-color); color: white; border-color: var(--expense-color); }
+
+        /* Form Card */
+        .form-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        /* K / M Quick Buttons */
+        .unit-btns {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            padding: 5px;
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .unit-btn:hover {
+            background: #dee2e6;
+        }
+
+        .submit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h4 { color: #666; margin-bottom: 5px; }
+        .stat-card .value { font-size: 1.3rem; font-weight: bold; }
+
+        /* Excel-like Table Styling */
+        .table-container {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            border: 1px solid #d0d7de;
+            padding: 8px;
+        }
+
+        /* Custom Excel Headers matching Image */
+        th.header-bankak { background-color: var(--header-blue); color: white; }
+        th.header-cashi { background-color: var(--header-blue); color: white; }
+        th.header-expenses { background-color: var(--header-red); color: white; }
+
+        tr:nth-child(even) { background-color: #fcfcfc; }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- اختيار نوع المعاملة -->
+    <div class="category-tabs">
+        <button class="tab-btn active" data-cat="bankak" onclick="setCategory('bankak')">بنكك</button>
+        <button class="tab-btn" data-cat="cashi" onclick="setCategory('cashi')">ماي كاشي</button>
+        <button class="tab-btn" data-cat="expenses" onclick="setCategory('expenses')">المنصرفات</button>
+    </div>
+
+    <!-- نموذج الإدخال -->
+    <div class="form-card">
+        <form id="transactionForm" onsubmit="handleFormSubmit(event)">
+            <div class="form-row">
+                <!-- المبلغ -->
+                <div class="input-group">
+                    <label id="amountLabel">المبلغ (مثال: 27 أو 27k)</label>
+                    <input type="text" id="amountInput" placeholder="أدخل المبلغ..." required autocomplete="off">
+                    <div class="unit-btns">
+                        <button type="button" class="unit-btn" onclick="appendUnit('k')">+ k (ألف)</button>
+                        <button type="button" class="unit-btn" onclick="appendUnit('m')">+ m (مليون)</button>
+                    </div>
+                </div>
+
+                <!-- رقم العملية / الملاحظة -->
+                <div class="input-group" id="secondInputGroup">
+                    <label id="secondLabel">رقم العملية</label>
+                    <input type="text" id="secondInput" placeholder="أدخل رقم العملية..." required autocomplete="off">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">إضافة المعاملة (Enter)</button>
+        </form>
+    </div>
+
+    <!-- كروت الإحصائيات -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h4>إجمالي بنكك</h4>
+            <div class="value" id="statBankak" style="color: var(--header-blue);">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>إجمالي ماي كاشي</h4>
+            <div class="value" id="statCashi" style="color: var(--header-blue);">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>إجمالي المنصرفات</h4>
+            <div class="value" id="statExpenses" style="color: var(--header-red);">0</div>
+        </div>
+    </div>
+
+    <!-- الجدول الجاهز لعرض البيانات بنفس تنسيق الصورة -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th class="header-bankak">A<br>المبلغ</th>
+                    <th class="header-bankak">B<br>رقم العملية</th>
+                    <th class="header-bankak">C<br>الاستلام</th>
+                    <th class="header-cashi">D<br>ماي كاشي</th>
+                    <th class="header-cashi">E<br>رقم العملية</th>
+                    <th class="header-cashi">F<br>الاستلام</th>
+                    <th class="header-expenses">G<br>المنصرفات</th>
+                    <th class="header-expenses">H<br>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- الصفوف الديناميكية ستظهر هنا -->
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    let currentCategory = 'bankak';
+    let rowsData = JSON.parse(localStorage.getItem('excelRowsData')) || [];
+
+    // إعدادات البداية
+    window.onload = function() {
+        renderTable();
+        setupInputEvents();
+    };
+
+    function setCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.tab-btn[data-cat="${cat}"]`).classList.add('active');
+
+        const secondLabel = document.getElementById('secondLabel');
+        const secondInput = document.getElementById('secondInput');
+
+        if (cat === 'expenses') {
+            secondLabel.innerText = 'ملاحظات';
+            secondInput.placeholder = 'أدخل الملاحظة...';
+            secondInput.required = false; // الملاحظات اختيارية
+        } else {
+            secondLabel.innerText = 'رقم العملية';
+            secondInput.placeholder = 'أدخل رقم العملية...';
+            secondInput.required = true;
+        }
+        document.getElementById('amountInput').focus();
+    }
+
+    function appendUnit(unit) {
+        const input = document.getElementById('amountInput');
+        let val = input.value.trim().toLowerCase();
+        val = val.replace(/k|m/g, ''); // تنظيف الاختصارات السابقة
+        if (val !== '') {
+            input.value = val + unit;
+        }
+        // الانتقال للحقل التالي تلقائياً
+        document.getElementById('secondInput').focus();
+    }
+
+    function setupInputEvents() {
+        const amountInput = document.getElementById('amountInput');
+        
+        // عند الضغط على Enter في خانة المبلغ، يتنقل لخانة رقم العملية/الملاحظات
+        amountInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.value.trim() !== '') {
+                    document.getElementById('secondInput').focus();
+                }
+            }
+        });
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        const amount = document.getElementById('amountInput').value.trim();
+        const secondVal = document.getElementById('secondInput').value.trim();
+
+        if (!amount) return;
+
+        // تجهيز كائن البيانات للصف الجديد
+        let newRow = {
+            bankakAmount: '',
+            bankakOp: '',
+            bankakChecked: false,
+            cashiAmount: '',
+            cashiOp: '',
+            cashiChecked: false,
+            expenseAmount: '',
+            expenseNotes: ''
+        };
+
+        if (currentCategory === 'bankak') {
+            newRow.bankakAmount = amount;
+            newRow.bankakOp = secondVal;
+            newRow.bankakChecked = true; // محدد افتراضياً
+        } else if (currentCategory === 'cashi') {
+            newRow.cashiAmount = amount;
+            newRow.cashiOp = secondVal;
+            newRow.cashiChecked = true;
+        } else if (currentCategory === 'expenses') {
+            newRow.expenseAmount = amount;
+            newRow.expenseNotes = secondVal;
+        }
+
+        rowsData.push(newRow);
+        saveAndRefresh();
+
+        // إرسال البيانات للـ Google Sheet أونلاين
+        sendToGoogleSheet(newRow);
+
+        // إعادة ضبط المدخلات
+        document.getElementById('transactionForm').reset();
+        document.getElementById('amountInput').focus();
+    }
+
+    function toggleCheck(index, field) {
+        rowsData[index][field] = !rowsData[index][field];
+        saveAndRefresh();
+    }
+
+    function parseFormattedValue(val) {
+        if (!val) return 0;
+        let str = val.toString().toLowerCase().trim();
+        let mult = 1;
+        if (str.endsWith('k')) {
+            mult = 1000;
+            str = str.replace('k', '');
+        } else if (str.endsWith('m')) {
+            mult = 1000000;
+            str = str.replace('m', '');
+        }
+        let num = parseFloat(str);
+        return isNaN(num) ? 0 : num * mult;
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        let totalBankak = 0;
+        let totalCashi = 0;
+        let totalExpenses = 0;
+
+        rowsData.forEach((row, index) => {
+            totalBankak += parseFormattedValue(row.bankakAmount);
+            totalCashi += parseFormattedValue(row.cashiAmount);
+            totalExpenses += parseFormattedValue(row.expenseAmount);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.bankakAmount || ''}</td>
+                <td>${row.bankakOp || ''}</td>
+                <td>${row.bankakAmount ? `<input type="checkbox" ${row.bankakChecked ? 'checked' : ''} onchange="toggleCheck(${index}, 'bankakChecked')">` : ''}</td>
+                
+                <td>${row.cashiAmount || ''}</td>
+                <td>${row.cashiOp || ''}</td>
+                <td>${row.cashiAmount ? `<input type="checkbox" ${row.cashiChecked ? 'checked' : ''} onchange="toggleCheck(${index}, 'cashiChecked')">` : ''}</td>
+                
+                <td>${row.expenseAmount || ''}</td>
+                <td>${row.expenseNotes || ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // تحديث الإحصائيات
+        document.getElementById('statBankak').innerText = formatStatNumber(totalBankak);
+        document.getElementById('statCashi').innerText = formatStatNumber(totalCashi);
+        document.getElementById('statExpenses').innerText = formatStatNumber(totalExpenses);
+    }
+
+    function formatStatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toLocaleString();
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('excelRowsData', JSON.stringify(rowsData));
+        renderTable();
+    }
+
+    // الربط بـ Google Sheet (استبدل الرابط برابط التطبيق الخاص بك)
+    function sendToGoogleSheet(data) {
+        const webAppUrl = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+        if (webAppUrl === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') return;
+
+        fetch(webAppUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).catch(err => console.error('Error:', err));
+    }
+</script>
+
+</body>
+</html>
